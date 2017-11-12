@@ -1,0 +1,15 @@
+<form name="$ctrl.form" ng-submit="$ctrl.validateForm($ctrl.formData)">
+    <div ng-display-errors="{{$ctrl.formErrors}}">
+        <label for="username"> Username</label>
+        <input type="text" id="username" name="username"
+               ng-model="$ctrl.formData.username">
+    </div>
+    <div ng-display-errors="{{$ctrl.formErrors}}">
+        <label for="password"> Password</label>
+        <input type="text" id="password" name="password"
+               ng-model="$ctrl.formData.password">
+    </div>
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
