@@ -20,11 +20,11 @@ Build your business validation rules using predicate functions.
 ```
 const validationRules = (state) => ({
     username() => {
-    return isNotEmpty(state.username)
-    .chain(username => isLongEnough(username, 12));
+        return isNotEmpty(state.username)
+        .chain(username => isLongEnough(username, 5));
     },
     password() => {
-      return isNotEmpty(state.password);
+        return isNotEmpty(state.password);
     }
   }) 
 }
@@ -37,4 +37,5 @@ Returns a map of validation errors.
 ```
 const formData = {username: 'johnDoe', password: ''};
 const errors = collectErrors(validationRules(formData));
+// {password: 'IS_EMPTY'}
 ```
