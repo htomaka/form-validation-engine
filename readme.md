@@ -6,7 +6,8 @@ Framework agnostic form validation tools.
 
 ### Assertion library
 
-These are simple predicate functions. All Return a Either monad.
+These are simple predicate functions. All must return an Either 
+monad.
 
 ```
 isEqual(1, 2) // Left({value: 'NOT_EQUAL'})
@@ -15,13 +16,13 @@ isEqual(1, 1) // Right({value: 1})
 
 ### Business Validation Rules
 
-Build your business validation rules using predicate functions.
+Use and combine your predicate functions to build your business rules.
 
 ```
 const validationRules = (state) => ({
     username() => {
         return isNotEmpty(state.username)
-        .chain(username => isLongEnough(username, 5));
+        .chain(username => isLongEnough(username, 5))
     },
     password() => {
         return isNotEmpty(state.password);
