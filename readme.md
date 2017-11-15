@@ -1,26 +1,26 @@
 # Form validation engine
 
-Framework agnostic, based on Folktale JS library. 
+Framework agnostic form validation tools.
 
 ## Building blocks
 
 ### Assertion library
 
-These are generic assertions functions.
+These are simple predicate functions. All Return a Either monad.
 
 ```
-isEqual(1, 2) // Result.Error({value: 'NOT_EQUAL'})
-isEqual(1, 1) // Result.Ok({value: 1})
+isEqual(1, 2) // Left({value: 'NOT_EQUAL'})
+isEqual(1, 1) // Right({value: 1})
 ```
 
 ### Business Validation Rules
 
-These are your custom validation rules
+Build your business validation rules using predicate functions.
 
 ```
 const validationRules = (state) => ({
     username() => {
-    return isEqual(state.username)
+    return isNotEmpty(state.username)
     .chain(username => isLongEnough(username, 12));
     },
     password() => {
@@ -32,9 +32,9 @@ const validationRules = (state) => ({
 
 ### Collect Errors
 
-Returns validation errors.
+Returns a map of validation errors.
 
 ```
-const formData = {username: 'johnDoe', password: 'aaa'};
+const formData = {username: 'johnDoe', password: ''};
 const errors = collectErrors(validationRules(formData));
 ```

@@ -13,8 +13,8 @@
     "angular": "^1.6.6",
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1",
-    "folktale": "^2.0.1",
     "lodash": "^4.17.4",
+    "monet": "^0.8.10",
     "raw-loader": "^0.5.1"
   },
   "devDependencies": {

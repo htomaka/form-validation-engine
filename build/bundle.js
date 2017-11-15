@@ -60,642 +60,11 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 19);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _defineEnumerableProperties(obj, descs) { for (var key in descs) { var desc = descs[key]; desc.configurable = desc.enumerable = true; if ("value" in desc) desc.writable = true; Object.defineProperty(obj, key, desc); } return obj; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-// --[ Dependencies ]---------------------------------------------------
-var warnDeprecation = __webpack_require__(2);
-var extend = __webpack_require__(3);
-
-// --[ Constants and Aliases ]------------------------------------------
-var TYPE = Symbol.for('@@folktale:adt:type');
-var TAG = Symbol.for('@@folktale:adt:tag');
-var META = Symbol.for('@@meta:magical');
-
-var keys = Object.keys;
-
-// --[ Helpers ]--------------------------------------------------------
-
-//
-// Returns an array of own enumerable values in an object.
-//
-function values(object) {
-  return keys(object).map(function (key) {
-    return object[key];
-  });
-}
-
-//
-// Transforms own enumerable key/value pairs.
-//
-function mapObject(object, transform) {
-  return keys(object).reduce(function (result, key) {
-    result[key] = transform(key, object[key]);
-    return result;
-  }, {});
-}
-
-// --[ Variant implementation ]-----------------------------------------
-
-//
-// Defines the variants given a set of patterns and an ADT namespace.
-//
-function defineVariants(typeId, patterns, adt) {
-  return mapObject(patterns, function (name, constructor) {
-    var _constructor, _ref, _extend, _mutatorMap, _tag, _type, _constructor2, _extend2, _mutatorMap2;
-
-    // ---[ Variant Internals ]-----------------------------------------
-    function InternalConstructor() {}
-    InternalConstructor.prototype = Object.create(adt);
-
-    extend(InternalConstructor.prototype, (_extend = {}, _defineProperty(_extend, TAG, name), _constructor = 'constructor', _mutatorMap = {}, _mutatorMap[_constructor] = _mutatorMap[_constructor] || {}, _mutatorMap[_constructor].get = function () {
-      return constructor;
-    }, _ref = 'is' + name, _mutatorMap[_ref] = _mutatorMap[_ref] || {}, _mutatorMap[_ref].get = function () {
-      warnDeprecation('.is' + name + ' is deprecated. Use ' + name + '.hasInstance(value)\ninstead to check if a value belongs to the ADT variant.');
-      return true;
-    }, _defineProperty(_extend, 'matchWith', function matchWith(pattern) {
-      return pattern[name](this);
-    }), _defineEnumerableProperties(_extend, _mutatorMap), _extend));
-
-    function makeInstance() {
-      var result = new InternalConstructor(); // eslint-disable-line prefer-const
-      extend(result, constructor.apply(undefined, arguments) || {});
-      return result;
-    }
-
-    extend(makeInstance, (_extend2 = {}, _defineProperty(_extend2, META, constructor[META]), _tag = 'tag', _mutatorMap2 = {}, _mutatorMap2[_tag] = _mutatorMap2[_tag] || {}, _mutatorMap2[_tag].get = function () {
-      return name;
-    }, _type = 'type', _mutatorMap2[_type] = _mutatorMap2[_type] || {}, _mutatorMap2[_type].get = function () {
-      return typeId;
-    }, _constructor2 = 'constructor', _mutatorMap2[_constructor2] = _mutatorMap2[_constructor2] || {}, _mutatorMap2[_constructor2].get = function () {
-      return constructor;
-    }, _defineProperty(_extend2, 'prototype', InternalConstructor.prototype), _defineProperty(_extend2, 'hasInstance', function hasInstance(value) {
-      return Boolean(value) && adt.hasInstance(value) && value[TAG] === name;
-    }), _defineEnumerableProperties(_extend2, _mutatorMap2), _extend2));
-
-    return makeInstance;
-  });
-}
-
-// --[ ADT Implementation ]--------------------------------------------
-
-/*~
- * authors:
- *   - Quildreen Motta
- * 
- * stability: experimental
- * type: |
- *   (String, Object (Array String)) => Union
- */
-var union = function union(typeId, patterns) {
-  var _extend3;
-
-  var UnionNamespace = Object.create(Union);
-  var variants = defineVariants(typeId, patterns, UnionNamespace);
-
-  extend(UnionNamespace, variants, (_extend3 = {}, _defineProperty(_extend3, TYPE, typeId), _defineProperty(_extend3, 'variants', values(variants)), _defineProperty(_extend3, 'hasInstance', function hasInstance(value) {
-    return Boolean(value) && value[TYPE] === this[TYPE];
-  }), _extend3));
-
-  return UnionNamespace;
-};
-
-/*~ ~belongsTo : union */
-var Union = {
-  /*~
-   * type: |
-   *   Union . (...(Variant, Union) => Any) => Union
-   */
-  derive: function derive() {
-    var _this = this;
-
-    for (var _len = arguments.length, derivations = Array(_len), _key = 0; _key < _len; _key++) {
-      derivations[_key] = arguments[_key];
-    }
-
-    derivations.forEach(function (derivation) {
-      _this.variants.forEach(function (variant) {
-        return derivation(variant, _this);
-      });
-    });
-    return this;
-  }
-};
-
-// --[ Exports ]--------------------------------------------------------
-union.Union = Union;
-union.typeSymbol = TYPE;
-union.tagSymbol = TAG;
-
-module.exports = union;
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var assertType = __webpack_require__(5);
-var assertFunction = __webpack_require__(9);
-
-var _require = __webpack_require__(10),
-    union = _require.union,
-    derivations = _require.derivations;
-
-var provideAliases = __webpack_require__(6);
-var adtMethods = __webpack_require__(11);
-var extend = __webpack_require__(3);
-var warnDeprecation = __webpack_require__(2);
-
-var equality = derivations.equality,
-    debugRepresentation = derivations.debugRepresentation,
-    serialization = derivations.serialization;
-
-/*~ stability: experimental */
-
-var Result = union('folktale:Result', {
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (a) => Result a b
-   */
-  Error: function Error(value) {
-    return { value: value };
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (b) => Result a b
-   */
-  Ok: function Ok(value) {
-    return { value: value };
-  }
-}).derive(equality, debugRepresentation, serialization);
-
-var Error = Result.Error,
-    Ok = Result.Ok;
-
-
-var assertResult = assertType(Result);
-
-extend(Error.prototype, {
-  /*~
-   * isRequired: true
-   * type: |
-   *   forall a, b: get (Result a b) => a
-   */
-  get value() {
-    throw new TypeError('`value` can’t be accessed in an abstract instance of Result.Error');
-  }
-});
-
-extend(Ok.prototype, {
-  /*~
-   * isRequired: true
-   * type: |
-   *   forall a, b: get (Result a b) => b
-   */
-  get value() {
-    throw new TypeError('`value` can’t be accessed in an abstract instance of Result.Ok');
-  }
-});
-
-/*~
- * ~belongsTo: Result
- */
-adtMethods(Result, {
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a b).((b) => c) => Result a c
-   */
-  map: {
-    /*~*/
-    Error: function map(f) {
-      assertFunction('Result.Error#map', f);
-      return this;
-    },
-
-    /*~*/
-    Ok: function map(f) {
-      assertFunction('Result.Ok#map', f);
-      return Ok(f(this.value));
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a ((b) => c)).(Result a b) => Result a c
-   */
-  apply: {
-    /*~*/
-    Error: function apply(anResult) {
-      assertResult('Result.Error#apply', anResult);
-      return this;
-    },
-
-    /*~*/
-    Ok: function apply(anResult) {
-      assertResult('Result.Ok#apply', anResult);
-      return anResult.map(this.value);
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a b).((b) => Result a c) => Result a c
-   */
-  chain: {
-    /*~*/
-    Error: function chain(f) {
-      assertFunction('Result.Error#chain', f);
-      return this;
-    },
-
-    /*~*/
-    Ok: function chain(f) {
-      assertFunction('Result.Ok#chain', f);
-      return f(this.value);
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).() => b :: throws TypeError
-   */
-  unsafeGet: {
-    /*~*/
-    Error: function unsafeGet() {
-      throw new TypeError('Can\'t extract the value of an Error.\n\nError does not contain a normal value - it contains an error.\nYou might consider switching from Result#unsafeGet to Result#getOrElse,\nor some other method that is not partial.\n      ');
-    },
-
-    /*~*/
-    Ok: function unsafeGet() {
-      return this.value;
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).(b) => b
-   */
-  getOrElse: {
-    /*~*/
-    Error: function getOrElse(_default) {
-      return _default;
-    },
-
-    /*~*/
-    Ok: function getOrElse(_default) {
-      return this.value;
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a b).((a) => Result c b) => Result c b
-   */
-  orElse: {
-    /*~*/
-    Error: function orElse(handler) {
-      assertFunction('Result.Error#orElse', handler);
-      return handler(this.value);
-    },
-
-    /*~*/
-    Ok: function orElse(handler) {
-      assertFunction('Result.Ok#orElse', handler);
-      return this;
-    }
-  },
-
-  /*~
-   * stability: stable
-   * type: |
-   *   forall a, b: (Result a b).(Result a b) => Result a b
-   *   where b is Semigroup
-   */
-  concat: {
-    /*~*/
-    Error: function concat(aResult) {
-      assertResult('Result.Error#concat', aResult);
-      return this;
-    },
-
-    /*~*/
-    Ok: function concat(aResult) {
-      var _this = this;
-
-      assertResult('Result.Ok#concat', aResult);
-      return aResult.map(function (xs) {
-        return _this.value.concat(xs);
-      });
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a b).((a) => c, (b) => c) => c
-   */
-  fold: {
-    /*~*/
-    Error: function fold(f, g) {
-      assertFunction('Result.Error#fold', f);
-      assertFunction('Result.Error#fold', g);
-      return f(this.value);
-    },
-
-    /*~*/
-    Ok: function fold(f, g) {
-      assertFunction('Result.Ok#fold', f);
-      assertFunction('Result.Ok#fold', g);
-      return g(this.value);
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).() => Result b a
-   */
-  swap: {
-    /*~*/
-    Error: function swap() {
-      return Ok(this.value);
-    },
-
-    /*~*/
-    Ok: function swap() {
-      return Error(this.value);
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   (Result a b).((a) => c, (b) => d) => Result c d
-   */
-  bimap: {
-    /*~*/
-    Error: function bimap(f, g) {
-      assertFunction('Result.Error#bimap', f);
-      assertFunction('Result.Error#bimap', g);
-      return Error(f(this.value));
-    },
-
-    /*~*/
-    Ok: function bimap(f, g) {
-      assertFunction('Result.Ok#bimap', f);
-      assertFunction('Result.Ok#bimap', g);
-      return Ok(g(this.value));
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b, c:
-   *     (Result a b).((a) => c) => Result c b
-   */
-  mapError: {
-    /*~*/
-    Error: function mapError(f) {
-      assertFunction('Result.Error#mapError', f);
-      return Error(f(this.value));
-    },
-
-    /*~*/
-    Ok: function mapError(f) {
-      assertFunction('Result.Ok#mapError', f);
-      return this;
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a: (Maybe a).((a) => Boolean) => Maybe a
-   */
-  filter: {
-    /*~*/
-    Error: function filter(predicate) {
-      assertFunction('Result.Error#filter', predicate);
-      return this;
-    },
-
-    /*~*/
-    Ok: function filter(predicate) {
-      assertFunction('Result.Ok#filter', predicate);
-      return predicate(this.value) ? this : Error();
-    }
-  }
-});
-
-Object.assign(Result, {
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (b) => Result a b
-   */
-  of: function of(value) {
-    return Ok(value);
-  },
-
-
-  /*~
-   * deprecated:
-   *   since: 2.0.0
-   *   replacedBy: .unsafeGet()
-   * type: |
-   *   forall a, b: (Result a b).() => b :: (throws TypeError)
-   */
-  'get': function get() {
-    warnDeprecation('`.get()` is deprecated, and has been renamed to `.unsafeGet()`.');
-    return this.unsafeGet();
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).() => a or b
-   */
-  merge: function merge() {
-    return this.value;
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).() => Validation a b
-   */
-  toValidation: function toValidation() {
-    return __webpack_require__(38)(this);
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Result a b).() => Maybe b
-   */
-  toMaybe: function toMaybe() {
-    return __webpack_require__(18)(this);
-  }
-});
-
-provideAliases(Error.prototype);
-provideAliases(Ok.prototype);
-provideAliases(Result);
-
-module.exports = Result;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var BLAME_FUNCTION_INDEX = 3; // [current, parent, *error*, caller to blame, …]
-
-function warnDeprecation(reason) {
-  // eslint-disable-line max-statements
-  if (process.env.FOLKTALE_ASSERTIONS !== 'none') {
-    var stack = new Error('').stack;
-    var offender = void 0;
-    if (stack) {
-      var lines = stack.split('\n');
-      offender = lines[BLAME_FUNCTION_INDEX];
-    }
-
-    if (offender) {
-      console.warn(reason + '\n    Blame: ' + offender.trim());
-    } else {
-      console.warn(reason);
-    }
-  }
-}
-
-module.exports = warnDeprecation;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var keys = Object.keys;
-var symbols = Object.getOwnPropertySymbols;
-var defineProperty = Object.defineProperty;
-var property = Object.getOwnPropertyDescriptor;
-
-/*
- * Extends an objects with own enumerable key/value pairs from other sources.
- *
- * This is used to define objects for the ADTs througout this file, and there
- * are some important differences from Object.assign:
- *
- *   - This code is only concerned with own enumerable property *names*.
- *   - Additionally this code copies all own symbols (important for tags).
- *
- * When copying, this function copies **whole property descriptors**, which
- * means getters/setters are not executed during the copying. The only
- * exception is when the property name is `prototype`, which is not
- * configurable in functions by default.
- *
- * This code only special cases `prototype` because any other non-configurable
- * property is considered an error, and should crash the program so it can be
- * fixed.
- */
-function extend(target) {
-  for (var _len = arguments.length, sources = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    sources[_key - 1] = arguments[_key];
-  }
-
-  sources.forEach(function (source) {
-    keys(source).forEach(function (key) {
-      if (key === 'prototype') {
-        target[key] = source[key];
-      } else {
-        defineProperty(target, key, property(source, key));
-      }
-    });
-    symbols(source).forEach(function (symbol) {
-      defineProperty(target, symbol, property(source, symbol));
-    });
-  });
-  return target;
-}
-
-module.exports = extend;
-
-/***/ }),
-/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -17784,1465 +17153,24 @@ module.exports = extend;
   }
 }.call(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(23), __webpack_require__(24)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5), __webpack_require__(6)(module)))
 
 /***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(0),
-    typeSymbol = _require.typeSymbol;
-
-module.exports = function (type) {
-  return function (method, value) {
-    var typeName = type[typeSymbol];
-    if (process.env.FOLKTALE_ASSERTIONS !== 'none' && !type.isPrototypeOf(value)) {
-      console.warn(typeName + '.' + method + ' expects a value of the same type, but was given ' + value + '.');
-
-      if (process.env.FOLKTALE_ASSERTIONS !== 'minimal') {
-        console.warn('\nThis could mean that you\'ve provided the wrong value to the method, in\nwhich case this is a bug in your program, and you should try to track\ndown why the wrong value is getting here.\n\nBut this could also mean that you have more than one ' + typeName + ' library\ninstantiated in your program. This is not **necessarily** a bug, it\ncould happen for several reasons:\n\n 1) You\'re loading the library in Node, and Node\'s cache didn\'t give\n    you back the same instance you had previously requested.\n\n 2) You have more than one Code Realm in your program, and objects\n    created from the same library, in different realms, are interacting.\n\n 3) You have a version conflict of folktale libraries, and objects\n    created from different versions of the library are interacting.\n\nIf your situation fits the cases (1) or (2), you are okay, as long as\nthe objects originate from the same version of the library. Folktale\ndoes not rely on reference checking, only structural checking. However\nyou\'ll want to watch out if you\'re modifying the ' + typeName + '\'s prototype,\nbecause you\'ll have more than one of them, and you\'ll want to make\nsure you do the same change in all of them \u2014 ideally you shouldn\'t\nbe modifying the object, though.\n\nIf your situation fits the case (3), you are *probably* okay if the\nversion difference isn\'t a major one. However, at this point the\nbehaviour of your program using ' + typeName + ' is undefined, and you should\ntry looking into why the version conflict is happening.\n\nParametric modules can help ensuring your program only has a single\ninstance of the folktale library. Check out the Folktale Architecture\ndocumentation for more information.\n      ');
-      }
-    }
-  };
-};
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
-
-/***/ }),
-/* 6 */
+/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-
-var aliases = {
-  equals: {
-    /*~
-     * module: null
-     * type: |
-     *   ('S 'a).('S 'a) => Boolean
-     *   where 'S is Setoid
-     */
-    'fantasy-land/equals': function fantasyLandEquals(that) {
-      return this.equals(that);
-    }
-  },
-
-  concat: {
-    /*~
-     * module: null
-     * type: |
-     *   ('S 'a).('S 'a) => 'S 'a
-     *   where 'S is Semigroup
-     */
-    'fantasy-land/concat': function fantasyLandConcat(that) {
-      return this.concat(that);
-    }
-  },
-
-  empty: {
-    /*~
-     * module: null
-     * type: |
-     *   ('M).() => 'M a
-     *   where 'M is Monoid
-     */
-    'fantasy-land/empty': function fantasyLandEmpty() {
-      return this.empty();
-    }
-  },
-
-  map: {
-    /*~
-     * module: null
-     * type: |
-     *   ('F 'a).(('a) => 'b) => 'F 'b
-     *   where 'F is Functor
-     */
-    'fantasy-land/map': function fantasyLandMap(transformation) {
-      return this.map(transformation);
-    }
-  },
-
-  apply: {
-    /*~
-     * module: null
-     * type: |
-     *   ('F ('a) => b).('F 'a) => 'F 'b
-     *   where 'F is Apply
-     */
-    ap: function ap(that) {
-      return this.apply(that);
-    },
-
-
-    /*~
-     * module: null
-     * type: |
-     *   ('F 'a).('F ('a) => 'b) => 'F 'b
-     *   where 'F is Apply
-     */
-    'fantasy-land/ap': function fantasyLandAp(that) {
-      return that.apply(this);
-    }
-  },
-
-  of: {
-    /*~
-     * module: null
-     * type: |
-     *   forall F, a:
-     *     (F).(a) => F a
-     *   where F is Applicative 
-     */
-    'fantasy-land/of': function fantasyLandOf(value) {
-      return this.of(value);
-    }
-  },
-
-  reduce: {
-    /*~
-     * module: null
-     * type: |
-     *   forall F, a, b:
-     *     (F a).((b, a) => b, b) => b
-     *   where F is Foldable  
-     */
-    'fantasy-land/reduce': function fantasyLandReduce(combinator, initial) {
-      return this.reduce(combinator, initial);
-    }
-  },
-
-  traverse: {
-    /*~
-     * module: null
-     * type: |
-     *   forall F, T, a, b:
-     *     (T a).((a) => F b, (c) => F c) => F (T b)
-     *   where F is Apply, T is Traversable
-     */
-    'fantasy-land/traverse': function fantasyLandTraverse(transformation, lift) {
-      return this.traverse(transformation, lift);
-    }
-  },
-
-  chain: {
-    /*~
-     * module: null
-     * type: |
-     *   forall M, a, b:
-     *     (M a).((a) => M b) => M b
-     *   where M is Chain
-     */
-    'fantasy-land/chain': function fantasyLandChain(transformation) {
-      return this.chain(transformation);
-    }
-  },
-
-  chainRecursively: {
-    /*~
-     * module: null
-     * type: |
-     *   forall M, a, b, c:
-     *     (M).(
-     *       Step:    ((a) => c, (b) => c, a) => M c,
-     *       Initial: a
-     *     ) => M b
-     *   where M is ChainRec 
-     */
-    chainRec: function chainRec(step, initial) {
-      return this.chainRecursively(step, initial);
-    },
-
-
-    /*~
-     * module: null
-     * type: |
-     *   forall M, a, b, c:
-     *     (M).(
-     *       Step:    ((a) => c, (b) => c, a) => M c,
-     *       Initial: a
-     *     ) => M b
-     *   where M is ChainRec 
-     */
-    'fantasy-land/chainRec': function fantasyLandChainRec(step, initial) {
-      return this.chainRecursively(step, initial);
-    }
-  },
-
-  extend: {
-    /*~
-     * module: null
-     * type: |
-     *   forall W, a, b:
-     *     (W a).((W a) => b) => W b
-     *   where W is Extend
-     */
-    'fantasy-land/extend': function fantasyLandExtend(transformation) {
-      return this.extend(transformation);
-    }
-  },
-
-  extract: {
-    /*~
-     * module: null
-     * type: |
-     *   forall W, a, b:
-     *     (W a).() => a
-     *   where W is Comonad
-     */
-    'fantasy-land/extract': function fantasyLandExtract() {
-      return this.extract();
-    }
-  },
-
-  bimap: {
-    /*~
-     * module: null
-     * type: |
-     *   forall F, a, b, c, d:
-     *     (F a b).((a) => c, (b) => d) => F c d
-     *   where F is Bifunctor
-     */
-    'fantasy-land/bimap': function fantasyLandBimap(f, g) {
-      return this.bimap(f, g);
-    }
-  },
-
-  promap: {
-    /*~
-     * module: null
-     * type: |
-     *   forall P, a, b, c, d:
-     *     (P a b).((c) => a, (b) => d) => P c d
-     */
-    'fantasy-land/promap': function fantasyLandPromap(f, g) {
-      return this.promap(f, g);
-    }
-  }
-};
-
-var provideAliases = function provideAliases(structure) {
-  Object.keys(aliases).forEach(function (method) {
-    if (typeof structure[method] === 'function') {
-      Object.keys(aliases[method]).forEach(function (alias) {
-        structure[alias] = aliases[method][alias];
-      });
-    }
-  });
-};
-
-module.exports = provideAliases;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var assertType = __webpack_require__(5);
-var assertFunction = __webpack_require__(9);
-
-var _require = __webpack_require__(10),
-    union = _require.union,
-    derivations = _require.derivations;
-
-var provideAliases = __webpack_require__(6);
-var warnDeprecation = __webpack_require__(2);
-var adtMethods = __webpack_require__(11);
-var extend = __webpack_require__(3);
-
-var equality = derivations.equality,
-    debugRepresentation = derivations.debugRepresentation,
-    serialization = derivations.serialization;
-
-/*~ stability: stable */
-
-var Maybe = union('folktale:Maybe', {
-  /*~
-   * type: |
-   *   forall a: () => Maybe a
-   */
-  Nothing: function Nothing() {},
-
-
-  /*~
-   * type: |
-   *   forall a: (a) => Maybe a
-   */
-  Just: function Just(value) {
-    return { value: value };
-  }
-}).derive(equality, debugRepresentation, serialization);
-
-var Nothing = Maybe.Nothing,
-    _Just = Maybe.Just;
-
-var assertMaybe = assertType(Maybe);
-
-extend(_Just.prototype, {
-  /*~
-   * isRequired: true
-   * type: |
-   *   forall a: get (Maybe a) => a
-   */
-  get value() {
-    throw new TypeError('`value` can’t be accessed in an abstract instance of Maybe.Just');
-  }
-});
-
-/*~~belongsTo: Maybe */
-adtMethods(Maybe, {
-  /*~
-   * stability: stable
-   * type: |
-   *   forall a, b: (Maybe a).((a) => b) => Maybe b
-   */
-  map: {
-    /*~*/
-    Nothing: function map(transformation) {
-      assertFunction('Maybe.Nothing#map', transformation);
-      return this;
-    },
-
-    /*~*/
-    Just: function map(transformation) {
-      assertFunction('Maybe.Just#map', transformation);
-      return _Just(transformation(this.value));
-    }
-  },
-
-  /*~
-   * stability: stable
-   * type: |
-   *   forall a, b: (Maybe (a) => b).(Maybe a) => Maybe b
-   */
-  apply: {
-    /*~*/
-    Nothing: function apply(aMaybe) {
-      assertMaybe('Maybe.Nothing#apply', aMaybe);
-      return this;
-    },
-
-    /*~*/
-    Just: function apply(aMaybe) {
-      assertMaybe('Maybe.Just#apply', aMaybe);
-      return aMaybe.map(this.value);
-    }
-  },
-
-  /*~
-   * stability: stable
-   * type: |
-   *   forall a, b: (Maybe a).((a) => Maybe b) => Maybe b
-   */
-  chain: {
-    /*~*/
-    Nothing: function chain(transformation) {
-      assertFunction('Maybe.Nothing#chain', transformation);
-      return this;
-    },
-
-    /*~*/
-    Just: function chain(transformation) {
-      assertFunction('Maybe.Just#chain', transformation);
-      return transformation(this.value);
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a: (Maybe a).() => a :: (throws TypeError)
-   */
-  unsafeGet: {
-    /*~*/
-    Nothing: function unsafeGet() {
-      throw new TypeError('Can\'t extract the value of a Nothing.\n\n    Since Nothing holds no values, it\'s not possible to extract one from them.\n    You might consider switching from Maybe#get to Maybe#getOrElse, or some other method\n    that is not partial.\n      ');
-    },
-
-    /*~*/
-    Just: function unsafeGet() {
-      return this.value;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a: (Maybe a).(a) => a
-   */
-  getOrElse: {
-    /*~*/
-    Nothing: function getOrElse(_default) {
-      return _default;
-    },
-
-    /*~*/
-    Just: function getOrElse(_default) {
-      return this.value;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a: (Maybe a).((a) => Maybe a) => Maybe a
-   */
-  orElse: {
-    /*~*/
-    Nothing: function orElse(handler) {
-      assertFunction('Maybe.Nothing#orElse', handler);
-      return handler(this.value);
-    },
-
-    /*~*/
-    Just: function orElse(handler) {
-      assertFunction('Maybe.Nothing#orElse', handler);
-      return this;
-    }
-  },
-
-  /*~
-   * authors:
-   *   - "@diasbruno"
-   * type: |
-   *   forall a: (Maybe a).(Maybe a) => Maybe a
-   *   where a is Semigroup
-   */
-  concat: {
-    /*~*/
-    Nothing: function concat(aMaybe) {
-      assertMaybe('Maybe.Nothing#concat', aMaybe);
-      return aMaybe;
-    },
-
-    /*~*/
-    Just: function concat(aMaybe) {
-      var _this = this;
-
-      assertMaybe('Maybe.Just#concat', aMaybe);
-      return aMaybe.matchWith({
-        Nothing: function Nothing() {
-          return _Just(_this.value);
-        },
-        Just: function Just(a) {
-          return _Just(_this.value.concat(a.value));
-        }
-      });
-    }
-  },
-
-  /*~
-   * deprecated:
-   *   since: 2.0.0
-   *   replacedBy: .matchWith(pattern)
-   * 
-   * type: |
-   *   forall a, b:
-   *     (Maybe a).({
-   *       Nothing: () => b,
-   *       Just: (a) => b
-   *     }) => b
-   */
-  cata: {
-    /*~*/
-    Nothing: function cata(pattern) {
-      warnDeprecation('`.cata(pattern)` is deprecated. Use `.matchWith(pattern)` instead.');
-      return pattern.Nothing();
-    },
-
-    /*~*/
-    Just: function cata(pattern) {
-      warnDeprecation('`.cata(pattern)` is deprecated. Use `.matchWith(pattern)` instead.');
-      return pattern.Just(this.value);
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b: (Maybe a).(() => b, (a) => b) => b
-   */
-  fold: {
-    /*~*/
-    Nothing: function Nothing(transformNothing, transformJust) {
-      assertFunction('Maybe.Nothing#fold', transformNothing);
-      assertFunction('Maybe.Nothing#fold', transformJust);
-      return transformNothing();
-    },
-
-    /*~*/
-    Just: function Just(transformNothing, transformJust) {
-      assertFunction('Maybe.Just#fold', transformNothing);
-      assertFunction('Maybe.Just#fold', transformJust);
-      return transformJust(this.value);
-    }
-  },
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a: (Maybe a).((a) => Boolean) => Maybe a
-   */
-  filter: {
-    /*~*/
-    Nothing: function filter(predicate) {
-      assertFunction('Maybe.Nothing#filter', predicate);
-      return this;
-    },
-
-    /*~*/
-    Just: function filter(predicate) {
-      assertFunction('Maybe.Just#filter', predicate);
-      return predicate(this.value) ? this : Nothing();
-    }
-  }
-});
-
-Object.assign(Maybe, {
-  /*~
-   * stability: stable
-   * type: |
-   *   forall a: (a) => Maybe a
-   */
-  of: function of(value) {
-    return _Just(value);
-  },
-
-
-  /*~
-   * authors:
-   *   - "@diasbruno"
-   * type: |
-   *   forall a: () => Maybe a
-   */
-  empty: function empty() {
-    return Nothing();
-  },
-
-
-  /*~
-   * deprecated:
-   *   since: 2.0.0
-   *   replacedBy: .unsafeGet()
-   * type: |
-   *   forall a: (Maybe a).() => a :: (throws TypeError)
-   */
-  'get': function get() {
-    warnDeprecation('`.get()` is deprecated, and has been renamed to `.unsafeGet()`.');
-    return this.unsafeGet();
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Maybe a).(b) => Result b a
-   */
-  toResult: function toResult(fallbackValue) {
-    return __webpack_require__(17)(this, fallbackValue);
-  },
-
-
-  /*~
-   * stability: experimental
-   * type: |
-   *   forall a, b: (Maybe a).(b) => Result b a
-   */
-  toValidation: function toValidation(fallbackValue) {
-    return __webpack_require__(39)(this, fallbackValue);
-  }
-});
-
-provideAliases(_Just.prototype);
-provideAliases(Nothing.prototype);
-provideAliases(Maybe);
-
-module.exports = Maybe;
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports) {
-
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-module.exports = function (method, transformation) {
-  if (typeof transformation !== 'function') {
-    throw new TypeError(method + ' expects a function, but was given ' + transformation + '.');
-  }
-};
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-/*~
- * stability: experimental
- * name: module folktale/adt/union
- */
-module.exports = {
-  union: __webpack_require__(0),
-  derivations: __webpack_require__(28)
-};
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var copyDocs = __webpack_require__(13);
-
-var defineAdtMethod = function defineAdtMethod(adt, definitions) {
-  Object.keys(definitions).forEach(function (name) {
-    var methods = definitions[name];
-    adt.variants.forEach(function (variant) {
-      var method = methods[variant.tag];
-      if (!method) {
-        throw new TypeError('Method ' + name + ' not defined for ' + variant.tag);
-      }
-      copyDocs(methods, method);
-      variant.prototype[name] = method;
-    });
-  });
-};
-
-module.exports = defineAdtMethod;
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-module.exports = {
-  equals: 'fantasy-land/equals',
-  concat: 'fantasy-land/concat',
-  empty: 'fantasy-land/empty',
-  map: 'fantasy-land/map',
-  ap: 'fantasy-land/ap',
-  of: 'fantasy-land/of',
-  reduce: 'fantasy-land/reduce',
-  traverse: 'fantasy-land/traverse',
-  chain: 'fantasy-land/chain',
-  chainRec: 'fantasy-land/chainRec',
-  extend: 'fantasy-land/extend',
-  extract: 'fantasy-land/extract',
-  bimap: 'fantasy-land/bimap',
-  promap: 'fantasy-land/promap'
-};
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var mm = Symbol.for('@@meta:magical');
-
-var copyDocumentation = function copyDocumentation(source, target) {
-  var extensions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  if (process.env.FOLKTALE_DOCS !== 'false') {
-    target[mm] = Object.assign({}, source[mm] || {}, extensions);
-  }
-};
-
-module.exports = copyDocumentation;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var assertType = __webpack_require__(5);
-var assertFunction = __webpack_require__(9);
-
-var _require = __webpack_require__(10),
-    union = _require.union,
-    derivations = _require.derivations;
-
-var provideAliases = __webpack_require__(6);
-var adtMethods = __webpack_require__(11);
-var extend = __webpack_require__(3);
-var warnDeprecation = __webpack_require__(2);
-
-var equality = derivations.equality,
-    debugRepresentation = derivations.debugRepresentation,
-    serialization = derivations.serialization;
-
-/*~ stability: experimental */
-
-var Validation = union('folktale:Validation', {
-  /*~
-   * type: |
-   *   forall a, b: (a) => Validation a b
-   */
-  Failure: function Failure(value) {
-    return { value: value };
-  },
-
-
-  /*~
-   * type: |
-   *   forall a, b: (b) => Validation a b
-   */
-  Success: function Success(value) {
-    return { value: value };
-  }
-}).derive(equality, debugRepresentation, serialization);
-
-var Success = Validation.Success,
-    Failure = Validation.Failure;
-
-var assertValidation = assertType(Validation);
-
-extend(Failure.prototype, {
-  /*~
-   * isRequired: true
-   * type: |
-   *   forall a, b: get (Validation a b) => a
-   */
-  get value() {
-    throw new TypeError('`value` can’t be accessed in an abstract instance of Validation.Failure');
-  }
-});
-
-extend(Success.prototype, {
-  /*~
-   * isRequired: true
-   * type: |
-   *   forall a, b: get (Validation a b) => b
-   */
-  get value() {
-    throw new TypeError('`value` can’t be accessed in an abstract instance of Validation.Success');
-  }
-});
-
-/*~~belongsTo: Validation */
-adtMethods(Validation, {
-  /*~
-   * type: |
-   *   forall a, b, c: (Validation a b).((b) => c) => Validation a c
-   */
-  map: {
-    /*~*/
-    Failure: function map(transformation) {
-      assertFunction('Validation.Failure#map', transformation);
-      return this;
-    },
-
-    /*~*/
-    Success: function map(transformation) {
-      assertFunction('Validation.Success#map', transformation);
-      return Success(transformation(this.value));
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b, c: (Validation (b) => c).(Validation a b) => Validation a c
-   */
-  apply: {
-    /*~*/
-    Failure: function apply(aValidation) {
-      assertValidation('Failure#apply', aValidation);
-      return Failure.hasInstance(aValidation) ? Failure(this.value.concat(aValidation.value)) : /* otherwise */this;
-    },
-
-    /*~*/
-    Success: function apply(aValidation) {
-      assertValidation('Success#apply', aValidation);
-      return Failure.hasInstance(aValidation) ? aValidation : /* otherwise */aValidation.map(this.value);
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => b :: throws TypeError
-   */
-  unsafeGet: {
-    /*~*/
-    Failure: function unsafeGet() {
-      throw new TypeError('Can\'t extract the value of a Failure.\n\n    Failure does not contain a normal value - it contains an error.\n    You might consider switching from Validation#get to Validation#getOrElse, or some other method\n    that is not partial.\n      ');
-    },
-
-    /*~*/
-    Success: function unsafeGet() {
-      return this.value;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).(b) => b
-   */
-  getOrElse: {
-    /*~*/
-    Failure: function getOrElse(_default) {
-      return _default;
-    },
-
-    /*~*/
-    Success: function getOrElse(_default) {
-      return this.value;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b, c:
-   *     (Validation a b).((a) => Validation c b) => Validation c b
-   */
-  orElse: {
-    /*~*/
-    Failure: function orElse(handler) {
-      assertFunction('Validation.Failure#orElse', handler);
-      return handler(this.value);
-    },
-
-    /*~*/
-    Success: function orElse(handler) {
-      assertFunction('Validation.Success#orElse', handler);
-      return this;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b:
-   *     (Validation a b).(Validation a b) => Validation a b
-   *   where a is Semigroup
-   */
-  concat: {
-    /*~*/
-    Failure: function concat(aValidation) {
-      assertValidation('Validation.Failure#concat', aValidation);
-      if (Failure.hasInstance(aValidation)) {
-        return Failure(this.value.concat(aValidation.value));
-      } else {
-        return this;
-      }
-    },
-
-    /*~*/
-    Success: function concat(aValidation) {
-      assertValidation('Validation.Success#concat', aValidation);
-      return aValidation;
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b, c:
-   *     (Validation a b).((a) => c, (b) => c) => c
-   */
-  fold: {
-    /*~*/
-    Failure: function fold(failureTransformation, successTransformation) {
-      assertFunction('Validation.Failure#fold', failureTransformation);
-      assertFunction('Validation.Failure#fold', successTransformation);
-      return failureTransformation(this.value);
-    },
-
-    /*~*/
-    Success: function fold(failureTransformation, successTransformation) {
-      assertFunction('Validation.Success#fold', failureTransformation);
-      assertFunction('Validation.Success#fold', successTransformation);
-      return successTransformation(this.value);
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => Validation b a
-   */
-  swap: {
-    /*~*/
-    Failure: function swap() {
-      return Success(this.value);
-    },
-
-    /*~*/
-    Success: function swap() {
-      return Failure(this.value);
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b, c, d:
-   *     (Validation a b).((a) => c, (b) => d) => Validation c d
-   */
-  bimap: {
-    /*~*/
-    Failure: function bimap(failureTransformation, successTransformation) {
-      assertFunction('Validation.Failure#fold', failureTransformation);
-      assertFunction('Validation.Failure#fold', successTransformation);
-      return Failure(failureTransformation(this.value));
-    },
-
-    /*~*/
-    Success: function bimap(failureTransformation, successTransformation) {
-      assertFunction('Validation.Success#fold', failureTransformation);
-      assertFunction('Validation.Success#fold', successTransformation);
-      return Success(successTransformation(this.value));
-    }
-  },
-
-  /*~
-   * type: |
-   *   forall a, b, c:
-   *     (Validation a b).((a) => c) Validation c b
-   */
-  mapFailure: {
-    /*~*/
-    Failure: function mapFailure(transformation) {
-      assertFunction('Validation.Failure#mapFailure', transformation);
-      return Failure(transformation(this.value));
-    },
-
-    /*~*/
-    Success: function mapFailure(transformation) {
-      assertFunction('Validation.Failure#mapFailure', transformation);
-      return this;
-    }
-  }
-});
-
-Object.assign(Validation, {
-  /*~
-   * type: |
-   *   forall a, b: (b) => Validation a b
-   */
-  of: function of(value) {
-    return Success(value);
-  },
-
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => b :: throws TypeError
-   */
-  'get': function get() {
-    warnDeprecation('`.get()` is deprecated, and has been renamed to `.unsafeGet()`.');
-    return this.unsafeGet();
-  },
-
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => a or b
-   */
-  merge: function merge() {
-    return this.value;
-  },
-
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => Result a b
-   */
-  toResult: function toResult() {
-    return __webpack_require__(15)(this);
-  },
-
-
-  /*~
-   * type: |
-   *   forall a, b: (Validation a b).() => Maybe b
-   */
-  toMaybe: function toMaybe() {
-    return __webpack_require__(16)(this);
-  }
-});
-
-provideAliases(Success.prototype);
-provideAliases(Failure.prototype);
-provideAliases(Validation);
-
-module.exports = Validation;
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(1),
-    Error = _require.Error,
-    Ok = _require.Ok;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b:
- *      (Validation a b) => Result a b
- */
-
-
-var validationToResult = function validationToResult(aValidation) {
-  return aValidation.matchWith({
-    Failure: function Failure(_ref) {
-      var value = _ref.value;
-      return Error(value);
-    },
-    Success: function Success(_ref2) {
-      var value = _ref2.value;
-      return Ok(value);
-    }
-  });
-};
-
-module.exports = validationToResult;
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(7),
-    Just = _require.Just,
-    Nothing = _require.Nothing;
-
-/*~
- * stability: stable
- * authors: 
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b:
- *     (Validation a b) => Maybe b
- */
-
-
-var validationToMaybe = function validationToMaybe(aValidation) {
-  return aValidation.matchWith({
-    Failure: function Failure() {
-      return Nothing();
-    },
-    Success: function Success(_ref) {
-      var value = _ref.value;
-      return Just(value);
-    }
-  });
-};
-
-module.exports = validationToMaybe;
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(1),
-    Error = _require.Error,
-    Ok = _require.Ok;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b:
- *     (Maybe a, b) => Result b a
- */
-
-
-var maybeToResult = function maybeToResult(aMaybe, failureValue) {
-  return aMaybe.matchWith({
-    Nothing: function Nothing() {
-      return Error(failureValue);
-    },
-    Just: function Just(_ref) {
-      var value = _ref.value;
-      return Ok(value);
-    }
-  });
-};
-
-module.exports = maybeToResult;
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(7),
-    Just = _require.Just,
-    Nothing = _require.Nothing;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- *
- * type: |
- *   forall a, b:
- *     (Result a b) => Maybe b
- */
-
-
-var resultToMaybe = function resultToMaybe(aResult) {
-  return aResult.matchWith({
-    Error: function Error(_ref) {
-      var _ = _ref.value;
-      return Nothing();
-    },
-    Ok: function Ok(_ref2) {
-      var value = _ref2.value;
-      return Just(value);
-    }
-  });
-};
-
-module.exports = resultToMaybe;
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _angular = __webpack_require__(20);
+var _angular = __webpack_require__(2);
 
 var _angular2 = _interopRequireDefault(_angular);
 
-var _root = __webpack_require__(22);
+var _root = __webpack_require__(4);
 
 var _root2 = _interopRequireDefault(_root);
 
-var _ngDisplayErrors = __webpack_require__(44);
+var _ngDisplayErrors = __webpack_require__(13);
 
 var _ngDisplayErrors2 = _interopRequireDefault(_ngDisplayErrors);
 
@@ -19253,15 +17181,15 @@ _angular2.default.module('formValidation', []).component('root', _root2.default)
                                                                                                                                            */
 
 /***/ }),
-/* 20 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(21);
+__webpack_require__(3);
 module.exports = angular;
 
 
 /***/ }),
-/* 21 */
+/* 3 */
 /***/ (function(module, exports) {
 
 /**
@@ -53155,7 +51083,7 @@ $provide.value("$locale", {
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
 
 /***/ }),
-/* 22 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53170,13 +51098,13 @@ var _createClass = function () { function defineProperties(target, props) { for 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       */
 
 
-var _lodash = __webpack_require__(4);
+var _lodash = __webpack_require__(0);
 
-var _validationRules = __webpack_require__(25);
+var _validationRules = __webpack_require__(7);
 
-var _collectErrors = __webpack_require__(42);
+var _collectErrors = __webpack_require__(10);
 
-var _root = __webpack_require__(43);
+var _root = __webpack_require__(12);
 
 var _root2 = _interopRequireDefault(_root);
 
@@ -53190,7 +51118,7 @@ var controller = function () {
 
     this.form = {};
     this.formErrors = null;
-    this.formData = null;
+    this.formData = {};
   }
 
   _createClass(controller, [{
@@ -53217,7 +51145,7 @@ var RootComponent = {
 exports.default = RootComponent;
 
 /***/ }),
-/* 23 */
+/* 5 */
 /***/ (function(module, exports) {
 
 var g;
@@ -53244,7 +51172,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 24 */
+/* 6 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -53272,7 +51200,7 @@ module.exports = function(module) {
 
 
 /***/ }),
-/* 25 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53283,7 +51211,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.validationRules = undefined;
 
-var _assertions = __webpack_require__(26);
+var _assertions = __webpack_require__(8);
 
 var assert = _interopRequireWildcard(_assertions);
 
@@ -53305,7 +51233,7 @@ var validationRules = exports.validationRules = function validationRules(state) 
     */
 
 /***/ }),
-/* 26 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53316,23 +51244,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.hasChanged = exports.notExists = exports.isMoreThan = exports.isLessThan = exports.match = exports.isEqual = exports.isLongEnough = exports.isNotEmpty = undefined;
 
-var _result = __webpack_require__(27);
+var _monet = __webpack_require__(9);
 
-var _result2 = _interopRequireDefault(_result);
-
-var _lodash = __webpack_require__(4);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Created by htomaka on 11/11/17.
- */
 var isNotEmpty = exports.isNotEmpty = function isNotEmpty(value) {
-  return !(0, _lodash.isNil)(value) ? _result2.default.Ok(value) : _result2.default.Error('IS_EMPTY');
-};
-
+  return value && value.trim() !== '' ? _monet.Either.Right(value) : _monet.Either.Left('IS_EMPTY');
+}; /**
+    * Created by htomaka on 11/11/17.
+    */
 var isLongEnough = exports.isLongEnough = function isLongEnough(value, target) {
-  return value.length >= target ? _result2.default.Ok(value) : _result2.default.Error('NOT_LONG_ENOUGH');
+  return value && value.length >= target ? _monet.Either.Right(value) : _monet.Either.Left('NOT_LONG_ENOUGH');
 };
 
 var isEqual = exports.isEqual = function isEqual(val1, val2) {};
@@ -53345,990 +51265,1020 @@ var hasChanged = exports.hasChanged = function hasChanged(oldVal, newVal) {
 };
 
 /***/ }),
-/* 27 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
+//     Monet.js 0.8.10
+
+//     (c) 2012-2016 Chris Myers
+//     Monet.js may be freely distributed under the MIT license.
+//     For all details and documentation:
+//     https://cwmyers.github.com/monet.js
 
 
-var _module$exports;
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var Result = __webpack_require__(1);
-
-var _require = __webpack_require__(0),
-    typeSymbol = _require.typeSymbol;
-
-/*~
- * stability: stable
- * name: module folktale/result
- */
-
-
-module.exports = (_module$exports = {
-  Error: Result.Error,
-  Ok: Result.Ok,
-  hasInstance: Result.hasInstance,
-  of: Result.of,
-  fromJSON: Result.fromJSON
-}, _defineProperty(_module$exports, typeSymbol, Result[typeSymbol]), _defineProperty(_module$exports, 'try', __webpack_require__(40)), _defineProperty(_module$exports, 'fromNullable', function fromNullable(aNullable) {
-  return __webpack_require__(41)(aNullable);
-}), _defineProperty(_module$exports, 'fromValidation', function fromValidation(aValidation) {
-  return __webpack_require__(15)(aValidation);
-}), _defineProperty(_module$exports, 'fromMaybe', function fromMaybe(aMaybe, failureValue) {
-  return __webpack_require__(17)(aMaybe, failureValue);
-}), _module$exports);
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-/*~
- * stability: experimental
- * name: module folktale/adt/union/derivations
- */
-module.exports = {
-  serialization: __webpack_require__(29),
-  equality: __webpack_require__(32),
-  debugRepresentation: __webpack_require__(37)
-};
-
-/***/ }),
-/* 29 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-// --[ Dependencies ]---------------------------------------------------
-var _require = __webpack_require__(0),
-    tagSymbol = _require.tagSymbol,
-    typeSymbol = _require.typeSymbol;
-
-var mapValues = __webpack_require__(30);
-var values = __webpack_require__(31);
-var extend = __webpack_require__(3);
-
-// --[ Constants ]------------------------------------------------------
-var typeJsonKey = '@@type';
-var tagJsonKey = '@@tag';
-var valueJsonKey = '@@value';
-
-// --[ Helpers ]--------------------------------------------------------
-
-/*~
- * type: ((Object 'a) => 'b) => ([Object 'a]) => Object 'b  
- */
-var arrayToObject = function arrayToObject(extractKey) {
-  return function (array) {
-    return array.reduce(function (object, element) {
-      object[extractKey(element)] = element;
-      return object;
-    }, {});
-  };
-};
-
-/*~
- * type: (String) => (Object 'a) => 'a | None 
- */
-var property = function property(propertyName) {
-  return function (object) {
-    return object[propertyName];
-  };
-};
-
-/*~
- * type: ([Object 'a]) => Object 'a 
- */
-var indexByType = arrayToObject(property(typeSymbol));
-
-/*~
- * type: (String, String) => Bool
- */
-var assertType = function assertType(given, expected) {
-  if (expected !== given) {
-    throw new TypeError('\n       The JSON structure was generated from ' + expected + '.\n       You are trying to parse it as ' + given + '. \n    ');
-  }
-};
-
-/*~
- * type: |
- *   type JSONSerialisation = {
- *     "@@type":  String,
- *     "@@tag":   String,
- *     "@@value": Object Any
- *   }
- *   type JSONParser = {
- *     fromJSON: (JSONSerialisation, Array JSONParser) => Variant
- *   }
- * 
- *   (Object JSONParser) => (JSONSerialisation) => Any
- */
-var parseValue = function parseValue(parsers) {
-  return function (value) {
-    if (value !== null && typeof value[typeJsonKey] === 'string') {
-      var type = value[typeJsonKey];
-      if (parsers[type]) {
-        return parsers[type].fromJSON(value, parsers, true);
-      } else {
-        return value;
-      }
+(function(root, factory) {
+    if (true) {
+        module.exports = factory(root);
+    } else if (typeof define === 'function' && define.amd) {
+        define(factory);
     } else {
-      return value;
+        root.curry = factory(root);
     }
-  };
-};
+}(this, function(root) {
+    "use strict";
 
-/*~
- * type: ('a) => JSON
- */
-var serializeValue = function serializeValue(value) {
-  return value === undefined ? null : value !== null && typeof value.toJSON === 'function' ? value.toJSON() : /* otherwise */value;
-};
+    var curry = function (fn, args) {
+      return function () {
+        var args1 = args.append(List.fromArray(Array.prototype.slice.call(arguments)));
+        return args1.size() >= fn.length ? fn.apply(this, args1.toArray().slice(0, args1.size())) : curry(fn, args1);
+      };
+    };
 
-// --[ Implementation ]-------------------------------------------------
+    var isFunction = function (f) {
+        return !!(f && f.constructor && f.call && f.apply)
+    };
 
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   (Variant, ADT) => Void 
- */
-var serialization = function serialization(variant, adt) {
-  var typeName = adt[typeSymbol];
-  var tagName = variant.prototype[tagSymbol];
+    var idFunction = function (value) {
+        return value
+    };
+    var trueFunction = function () {
+        return true
+    };
+    var falseFunction = function () {
+        return false
+    };
 
-  /*~
-   * stability: experimental
-   * module: null
-   * authors:
-   *   - "@boris-marinov"
-   * 
-   * type: |
-   *   type JSONSerialisation = {
-   *     "@@type":  String,
-   *     "@@tag":   String,
-   *     "@@value": Object Any
-   *   }
-   * 
-   *   Variant . () => JSONSerialisation
-   */
-  variant.prototype.toJSON = function () {
-    var _ref;
+    var Monet = root.Monet = {}
 
-    return _ref = {}, _defineProperty(_ref, typeJsonKey, typeName), _defineProperty(_ref, tagJsonKey, tagName), _defineProperty(_ref, valueJsonKey, mapValues(this, serializeValue)), _ref;
-  };
-
-  /*~
-   * stability: experimental
-   * module: null
-   * authors:
-   *   - "@boris-marinov"
-   * 
-   * type: |
-   *   type JSONSerialisation = {
-   *     "@@type":  String,
-   *     "@@tag":   String,
-   *     "@@value": Object Any
-   *   }
-   *   type JSONParser = {
-   *     fromJSON: (JSONSerialisation, Array JSONParser) => Variant
-   *   }
-   * 
-   *   (JSONSerialisation, Array JSONParser) => Variant
-   */
-  adt.fromJSON = function (value) {
-    var parsers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _defineProperty({}, typeName, adt);
-    var keysIndicateType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-    var valueTypeName = value[typeJsonKey];
-    var valueTagName = value[tagJsonKey];
-    var valueContents = value[valueJsonKey];
-    assertType(typeName, valueTypeName);
-    var parsersByType = keysIndicateType ? parsers : /*otherwise*/indexByType(values(parsers));
-
-    var parsedValue = mapValues(valueContents, parseValue(parsersByType));
-    return extend(Object.create(adt[valueTagName].prototype), parsedValue);
-  };
-};
-
-// --[ Exports ]--------------------------------------------------------
-module.exports = serialization;
-
-/***/ }),
-/* 30 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-/*~
- * stability: stable
- * authors:
- *   - Quildreen Motta
- *
- * complexity: O(n), n is the number of own enumerable properties.
- * type: |
- *   (Object 'a, ('a) => 'b) => Object 'b
- */
-var mapValues = function mapValues(object, transformation) {
-  var keys = Object.keys(object);
-  var result = {};
-
-  for (var i = 0; i < keys.length; ++i) {
-    var key = keys[i];
-    result[key] = transformation(object[key]);
-  }
-
-  return result;
-};
-
-// --[ Convenience ]---------------------------------------------------
-
-/*~
- * stability: stable
- * authors:
- *   - Quildreen Motta
- * 
- * complexity: O(n), n is the number of own enumerable properties.
- * type: |
- *   (Object 'a) . (('a) => 'b) => Object 'b
- */
-mapValues.infix = function (transformation) {
-  return mapValues(this, transformation);
-};
-
-// --[ Exports ]-------------------------------------------------------
-module.exports = mapValues;
-
-/***/ }),
-/* 31 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-/*~
- * stability : stable
- * authors:
- *   - Quildreen Motta
- *
- * complexity : O(n), n is the number of own enumerable properties.
- * type: |
- *   (Object 'a) => Array 'a
- */
-var values = function values(object) {
-  return Object.keys(object).map(function (k) {
-    return object[k];
-  });
-};
-
-// --[ Exports ]-------------------------------------------------------
-module.exports = values;
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-// --[ Dependencies ]---------------------------------------------------
-var assertType = __webpack_require__(5);
-var flEquals = __webpack_require__(33);
-var fl = __webpack_require__(12);
-var provideAliases = __webpack_require__(6);
-var copyDocs = __webpack_require__(13);
-
-var _require = __webpack_require__(0),
-    tagSymbol = _require.tagSymbol,
-    typeSymbol = _require.typeSymbol;
-
-var toString = Object.prototype.toString;
-var prototypeOf = Object.getPrototypeOf;
-
-// --[ Helpers ]--------------------------------------------------------
-
-/*~
- * type: (Any) => Boolean
- */
-var isSetoid = function isSetoid(value) {
-  return value != null && (typeof value[fl.equals] === 'function' || typeof value.equals === 'function');
-};
-
-/*~
- * type: (Variant, Variant) => Boolean
- */
-var sameType = function sameType(a, b) {
-  return a[typeSymbol] === b[typeSymbol] && a[tagSymbol] === b[tagSymbol];
-};
-
-var isPlainObject = function isPlainObject(object) {
-  if (Object(object) !== object) return false;
-
-  return !prototypeOf(object) || !object.toString || toString.call(object) === object.toString();
-};
-
-var deepEquals = function deepEquals(a, b) {
-  if (a === b) return true;
-
-  var leftSetoid = isSetoid(a);
-  var rightSetoid = isSetoid(b);
-  if (leftSetoid) {
-    if (rightSetoid) return flEquals(a, b);else return false;
-  }
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every(function (x, i) {
-      return deepEquals(x, b[i]);
-    });
-  }
-
-  if (isPlainObject(a) && isPlainObject(b)) {
-    var keysA = Object.keys(a);
-    var keysB = Object.keys(b);
-    var setB = new Set(keysB);
-    return keysA.length === keysB.length && prototypeOf(a) === prototypeOf(b) && keysA.every(function (k) {
-      return setB.has(k) && a[k] === b[k];
-    });
-  }
-
-  return false;
-};
-
-// --[ Implementation ]------------------------------------------------
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   (('a, 'a) => Boolean) => (Variant, Union) => Void
- */
-var createDerivation = function createDerivation(valuesEqual) {
-  /*~
-   * type: ('a, 'a) => Boolean
-   */
-  var equals = function equals(a, b) {
-    // identical objects must be equal
-    if (a === b) return true;
-
-    // we require both values to be setoids if one of them is
-    var leftSetoid = isSetoid(a);
-    var rightSetoid = isSetoid(b);
-    if (leftSetoid) {
-      if (rightSetoid) return flEquals(a, b);else return false;
+    var swap = Monet.swap = function (f) {
+        return function (a, b) {
+            return f(b, a)
+        }
     }
 
-    // fall back to the provided equality
-    return valuesEqual(a, b);
-  };
-
-  /*~
-   * type: (Object Any, Object Any, Array String) => Boolean
-   */
-  var compositesEqual = function compositesEqual(a, b, keys) {
-    for (var i = 0; i < keys.length; ++i) {
-      var keyA = a[keys[i]];
-      var keyB = b[keys[i]];
-      if (!equals(keyA, keyB)) {
-        return false;
-      }
+    var map = function (fn) {
+        return this.bind(this.of.compose(fn))
     }
-    return true;
-  };
 
-  var derivation = function derivation(variant, adt) {
-    /*~
-     * stability: experimental
-     * module: null
-     * authors:
-     *   - "@boris-marinov"
-     *   - Quildreen Motta
-     * 
-     * type: |
-     *   forall S, a:
-     *     (S a).(S a) => Boolean
-     *   where S is Setoid
+    var apply2 = Monet.apply2 = function(a1, a2, f) {
+        return a2.ap(a1.map(f.curry()))
+    }
+
+    Monet.curry = function (fn) {
+        return curry(fn, Nil);
+    }
+
+    Function.prototype.curry = function () {
+        return curry(this, Nil)
+    }
+
+    // List monad
+
+    var list;
+    var List = list = root.List = function (head, tail) {
+        return new List.fn.init(head, tail)
+    }
+
+    var listMap = function (fn, l) {
+        return listMapC(fn, l).run()
+    }
+
+    var listMapC = function (fn, l) {
+        return l.isNil ? Return(l) : Suspend(function () {
+            return listMapC(fn, l.tail())
+        }).map(cons.curry()(fn(l.head())))
+    }
+
+    var listEach = function (effectFn, l) {
+        if (!l.isNil) {
+            effectFn(l.head())
+            listEach(effectFn, l.tail())
+        }
+    }
+
+    var foldLeft = function (fn, acc, l) {
+        function fL(acc, l) {
+            return l.isNil ?
+                Return(acc) :
+                Suspend(function () {
+                    return fL(fn(acc, l.head()), l.tail())
+                })
+        }
+
+        return fL(acc, l).run()
+    }
+
+    var foldRight = function (fn, l, acc) {
+        function fR(l, acc) {
+            return l.isNil ?
+                Return(acc) :
+                Suspend(function () {
+                    return fR(l.tail(), acc)
+                }).map(function (acc1) {
+                        return fn(l.head(), acc1)
+                    })
+        }
+
+        return fR(l, acc).run()
+    }
+
+
+    var append = function (list1, list2) {
+        function append1(list1, list2) {
+            return list1.isNil ?
+                Return(list2) :
+                Suspend(function () {
+                    return append1(list1.tail(), list2).map(function (list) {
+                        return list.cons(list1.head())
+                    })
+                })
+        }
+
+        return append1(list1, list2).run()
+    }
+
+    var sequence = function (list, type) {
+        return list.foldRight(type.of(Nil))(type.map2(cons))
+    }
+
+    var sequenceValidation = function (list) {
+        return list.foldLeft(Success(Nil))(function (acc, a) {
+            return  acc.ap(a.map(function (v) {
+                return function (t) {
+                    return cons(v, t)
+                }
+            }))
+        }).map(listReverse)
+    }
+
+    var listReverse = function (list) {
+        return list.foldLeft(Nil)(swap(cons))
+    }
+
+    var listFilter = function(list, fn) {
+      return list.foldRight(Nil)(function(a, acc) {
+        return fn(a) ? cons(a,acc): acc
+      })
+    }
+
+    var listAp = function(list1, list2) {
+        return list1.bind(function(x) {
+          return list2.map(function(f) {
+                return f(x)
+            })
+        })
+    }
+
+    var cons = function (head, tail) {
+        return tail.cons(head)
+    }
+
+
+    List.fn = List.prototype = {
+        init: function (head, tail) {
+            if (head == null) {
+                this.isNil = true
+                this.size_ = 0
+            } else {
+                this.isNil = false
+                this.head_ = head
+                this.tail_ = tail == null ? Nil : tail
+                this.size_ = tail == null ? 0 : tail.size() + 1
+            }
+        },
+        of: function (value) {
+            return new List(value)
+        },
+        size: function () {
+            return this.size_
+        },
+        cons: function (head) {
+            return List(head, this)
+        },
+        snoc: function (element) {
+            return this.concat(List(element))
+        },
+        map: function (fn) {
+            return listMap(fn, this)
+        },
+        toArray: function () {
+            return foldLeft(function (acc, e) {
+                acc.push(e)
+                return acc
+            }, [], this)
+        },
+        foldLeft: function (initialValue) {
+            var self = this
+            return function (fn) {
+                return foldLeft(fn, initialValue, self)
+            }
+        },
+        foldRight: function (initialValue) {
+            var self = this
+            return function (fn) {
+                return foldRight(fn, self, initialValue)
+            }
+        },
+        append: function (list2) {
+            return append(this, list2)
+        },
+        filter: function(fn) {
+          return listFilter(this, fn)
+        },
+        flatten: function () {
+            return foldRight(append, this, Nil)
+        },
+        flattenMaybe: function () {
+            return this.flatMap(Maybe.toList)
+        },
+        reverse: function () {
+            return listReverse(this)
+        },
+        bind: function (fn) {
+            return this.map(fn).flatten()
+        },
+        each: function (effectFn) {
+            listEach(effectFn, this)
+        },
+        // transforms a list of Maybes to a Maybe list
+        sequenceMaybe: function () {
+            return sequence(this, Maybe)
+        },
+        sequenceValidation: function () {
+            return sequenceValidation(this)
+        },
+        sequenceEither: function () {
+            return sequence(this, Either)
+        },
+        sequenceIO: function () {
+            return sequence(this, IO)
+        },
+        sequenceReader: function () {
+            return sequence(this, Reader)
+        },
+        sequence: function (monadType) {
+            return sequence(this, monadType)
+        },
+        head: function () {
+            return this.head_
+        },
+        headMaybe: function () {
+            return this.isNil ? None() : Some(this.head_)
+        },
+        tail: function () {
+            return this.isNil ? Nil : this.tail_
+        },
+        tails: function () {
+            return this.isNil ? List(Nil, Nil) : this.tail().tails().cons(this)
+        },
+        ap: function(list) {
+            return listAp(this, list)
+        },
+        isNEL: falseFunction
+    }
+
+    List.fn.init.prototype = List.fn;
+    var Nil = root.Nil = new List.fn.init()
+
+    // Aliases
+
+    List.prototype.empty = function () {
+        return Nil
+    }
+
+
+    List.fromArray = function (array) {
+        var l = Nil
+        for (var i = array.length; i--; i <= 0) {
+            l = l.cons(array[i])
+        }
+        return l
+
+    }
+
+
+    List.of = function (a) {
+        return new List(a, Nil)
+    }
+
+    /*
+     * Non-Empty List monad
+     * This is also a comonad because there exists the implementation of extract(copure), which is just head
+     * and cobind and cojoin.
+     *
      */
-    variant.prototype.equals = function (value) {
-      assertType(adt)(this[tagSymbol] + '#equals', value);
-      return sameType(this, value) && compositesEqual(this, value, Object.keys(this));
-    };
-    provideAliases(variant.prototype);
-    return variant;
-  };
-  copyDocs(createDerivation, derivation, {
-    type: '(Variant, Union) => Void'
-  });
 
-  return derivation;
-};
-
-// --[ Exports ]-------------------------------------------------------
-
-/*~~inheritsMeta: createDerivation */
-module.exports = createDerivation(deepEquals);
-
-module.exports.withCustomComparison = createDerivation;
-
-/***/ }),
-/* 33 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(12),
-    flEquals = _require.equals;
-
-var curry = __webpack_require__(34);
-var warn = __webpack_require__(35)('equals');
-var unsupported = __webpack_require__(36)('equals');
-
-var isNew = function isNew(a) {
-  return typeof a[flEquals] === 'function';
-};
-var isOld = function isOld(a) {
-  return typeof a.equals === 'function';
-};
-
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- *   - Quildreen Motta
- * 
- * type: |
- *   forall S, a:
- *     (S a, S a) => Boolean
- *   where S is Setoid
- */
-var equals = function equals(setoidLeft, setoidRight) {
-  return isNew(setoidLeft) ? setoidLeft[flEquals](setoidRight) : isOld(setoidLeft) ? warn(setoidLeft.equals(setoidRight)) : /*otherwise*/unsupported(setoidLeft);
-};
-
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- *   - Quildreen Motta
- * 
- * type: |
- *   forall S, a:
- *     (S a) => (S a) => Boolean
- *   where S is Setoid
- */
-equals.curried = curry(2, function (setoidRight, setoidLeft) {
-  return (// eslint-disable-line no-magic-numbers
-    equals(setoidLeft, setoidRight)
-  );
-});
-
-/*~
- * stability: experimental
- * authors:
- *   - Quildreen Motta
- * 
- * type: |
- *   forall S, a:
- *     (S a).(S a) => Boolean
- *   where S is Setoid
- */
-equals.infix = function (aSetoid) {
-  return equals(this, aSetoid);
-};
-
-module.exports = equals;
-
-/***/ }),
-/* 34 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-/*~
- * stability: experimental
- * authors:
- *   - Quildreen Motta
- *
- * type: |
- *   (Number, (Any...) => 'a) => Any... => 'a or ((Any...) => 'a)
- */
-var curry = function curry(arity, fn) {
-  var curried = function curried(oldArgs) {
-    return function () {
-      for (var _len = arguments.length, newArgs = Array(_len), _key = 0; _key < _len; _key++) {
-        newArgs[_key] = arguments[_key];
-      }
-
-      var allArgs = oldArgs.concat(newArgs);
-      var argCount = allArgs.length;
-
-      return argCount < arity ? curried(allArgs) : /* otherwise */fn.apply(undefined, _toConsumableArray(allArgs));
-    };
-  };
-
-  return curried([]);
-};
-
-// --[ Exports ]-------------------------------------------------------
-module.exports = curry;
-
-/***/ }),
-/* 35 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var deprecated = __webpack_require__(2);
-
-module.exports = function (methodName) {
-  return function (result) {
-    deprecated('Type.' + methodName + '() is being deprecated in favour of Type[\'fantasy-land/' + methodName + '\'](). \n    Your data structure is using the old-style fantasy-land methods,\n    and these won\'t be supported in Folktale 3');
-    return result;
-  };
-};
-
-/***/ }),
-/* 36 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-module.exports = function (methodName) {
-  return function (object) {
-    throw new TypeError(object + " does not have a method '" + methodName + "'.");
-  };
-};
-
-/***/ }),
-/* 37 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-// --[ Dependencies ]---------------------------------------------------
-var _require = __webpack_require__(0),
-    tagSymbol = _require.tagSymbol,
-    typeSymbol = _require.typeSymbol;
-
-// --[ Helpers ]--------------------------------------------------------
-/*~
- * type: (Object Any) => String
- */
-
-
-var objectToKeyValuePairs = function objectToKeyValuePairs(object) {
-  return Object.keys(object).map(function (key) {
-    return key + ': ' + showValue(object[key]);
-  }).join(', ');
-};
-
-/*~
- * type: (Object Any).() => String
- */
-var plainObjectToString = function plainObjectToString() {
-  return '{ ' + objectToKeyValuePairs(this) + ' }';
-};
-
-/*~
- * type: (Array Any).() => String
- */
-var arrayToString = function arrayToString() {
-  return '[' + this.map(showValue).join(', ') + ']';
-};
-
-/*~
- * type: (Function) => String
- */
-var functionNameToString = function functionNameToString(fn) {
-  return fn.name !== '' ? ': ' + fn.name : '';
-};
-
-/*~
- * type: (Function) => String
- */
-var functionToString = function functionToString(fn) {
-  return '[Function' + functionNameToString(fn) + ']';
-};
-
-/*~
- * type: () => String
- */
-var nullToString = function nullToString() {
-  return 'null';
-};
-
-/*~
- * type: (Null | Object Any) => String
- */
-var objectToString = function objectToString(object) {
-  return object === null ? nullToString : Array.isArray(object) ? arrayToString : object.toString() === {}.toString() ? plainObjectToString : /* otherwise */object.toString;
-};
-
-/*~
- * type: (Any) => String
- */
-var showValue = function showValue(value) {
-  return typeof value === 'undefined' ? 'undefined' : typeof value === 'function' ? functionToString(value) : (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'symbol' ? value.toString() : (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' ? objectToString(value).call(value) : /* otherwise */JSON.stringify(value);
-};
-
-// --[ Implementation ]------------------------------------------------
-
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   (Variant, Union) => Void
- */
-var debugRepresentation = function debugRepresentation(variant, adt) {
-  // eslint-disable-line max-statements
-  var typeName = adt[typeSymbol];
-  var variantName = adt[typeSymbol] + '.' + variant.prototype[tagSymbol];
-
-  // (for Object.prototype.toString)
-  adt[Symbol.toStringTag] = typeName;
-  variant.prototype[Symbol.toStringTag] = variantName;
-
-  // (regular JavaScript representations)
-  /*~
-   * stability: experimental
-   * module: null
-   * authors:
-   *   - "@boris-marinov"
-   * 
-   * type: |
-   *   () => String
-   */
-  adt.toString = function () {
-    return typeName;
-  };
-
-  /*~
-   * stability: experimental
-   * mmodule: null
-   * authors:
-   *   - "@boris-marinov"
-   * 
-   * type: |
-   *   () => String
-   */
-  variant.toString = function () {
-    return variantName;
-  };
-
-  /*~
-   * stability: experimental
-   * module: null
-   * authors:
-   *   - "@boris-marinov"
-   * 
-   * type: |
-   *   (Union).() => String
-   */
-  variant.prototype.toString = function () {
-    return variantName + '(' + plainObjectToString.call(this) + ')';
-  };
-
-  // (Node REPL representations)
-  adt.inspect = adt.toString;
-  variant.inspect = variant.toString;
-  variant.prototype.inspect = variant.prototype.toString;
-
-  return variant;
-};
-
-// --[ Exports ]-------------------------------------------------------
-module.exports = debugRepresentation;
-
-/***/ }),
-/* 38 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(14),
-    Success = _require.Success,
-    Failure = _require.Failure;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b:
- *     (Result a b) => Validation a b
- */
-
-
-var resultToValidation = function resultToValidation(aResult) {
-  return aResult.matchWith({
-    Error: function Error(_ref) {
-      var value = _ref.value;
-      return Failure(value);
-    },
-    Ok: function Ok(_ref2) {
-      var value = _ref2.value;
-      return Success(value);
+    var NonEmptyList;
+    var NEL = root.NEL = NonEmptyList = root.NonEmptyList = function (head, tail) {
+        if (head == null) {
+            throw "Cannot create an empty Non-Empty List."
+        }
+        return new NEL.fn.init(head, tail)
     }
-  });
-};
 
-module.exports = resultToValidation;
-
-/***/ }),
-/* 39 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(14),
-    Success = _require.Success,
-    Failure = _require.Failure;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b:
- *     (Maybe a, b) => Validation b a
- */
-
-
-var maybeToValidation = function maybeToValidation(aMaybe, failureValue) {
-  return aMaybe.matchWith({
-    Nothing: function Nothing() {
-      return Failure(failureValue);
-    },
-    Just: function Just(_ref) {
-      var value = _ref.value;
-      return Success(value);
+    NEL.of = function(a) {
+      return NEL(a, Nil)
     }
-  });
-};
 
-module.exports = maybeToValidation;
+    NEL.fn = NEL.prototype = {
+        init: function (head, tail) {
+            if (head == null) {
+                this.isNil = true
+                this.size_ = 0
+            } else {
+                this.isNil = false
+                this.head_ = head
+                this.tail_ = tail == null ? Nil : tail
+                this.size_ = this.tail_.size() + 1
+            }
+        },
+        map: function (fn) {
+            return NEL(fn(this.head_), listMap(fn, this.tail_))
+        },
+
+        bind: function (fn) {
+            var p = fn(this.head_)
+            if (!p.isNEL()) {
+                throw "function must return a NonEmptyList."
+            }
+            var list = this.tail().foldLeft(Nil.snoc(p.head()).append(p.tail()))(function (acc, e) {
+                var list2 = fn(e).toList()
+                return acc.snoc(list2.head()).append(list2.tail())
+            })
+
+            return new NEL(list.head(), list.tail())
+        },
+
+        head: function () {
+            return this.head_
+        },
+
+        tail: function () {
+            return this.tail_
+        },
+        //NEL[A] -> NEL[NEL[A]]
+        tails: function () {
+            var listsOfNels = this.toList().tails().map(NEL.fromList).flattenMaybe();
+            return  NEL(listsOfNels.head(), listsOfNels.tail())
+        },
+        toList: function () {
+            return List(this.head_, this.tail_)
+        },
+        reverse: function () {
+            if (this.tail().isNil) {
+                return this
+            } else {
+                var reversedTail = this.tail().reverse()
+                return NEL(reversedTail.head(), reversedTail.tail().append(List(this.head())))
+            }
+        },
+        foldLeft: function (initialValue) {
+            return this.toList().foldLeft(initialValue)
+        },
+        foldRight: function (initialValue) {
+            return this.toList().foldRight(initialValue)
+        },
+        reduceLeft: function (fn) {
+          return this.tail().foldLeft(this.head())(fn)
+        },
+        filter: function (fn) {
+            return listFilter(this.toList(), fn)
+        },
+        append: function (list2) {
+            return NEL.fromList(this.toList().append(list2.toList())).some()
+        },
+        // NEL[A] -> (NEL[A] -> B) -> NEL[B]
+        cobind: function (fn) {
+            return this.cojoin().map(fn)
+        },
+        size: function () {
+            return this.size_
+        },
+        isNEL: trueFunction
+    }
+
+    NEL.fromList = function (list) {
+        return list.isNil ? None() : Some(NEL(list.head(), list.tail()))
+    }
+
+    NEL.fn.init.prototype = NEL.fn;
+    NEL.prototype.toArray = List.prototype.toArray
+    NEL.prototype.extract = NEL.prototype.copure = NEL.prototype.head
+    NEL.prototype.cojoin = NEL.prototype.tails
+    NEL.prototype.coflatMap = NEL.prototype.mapTails = NEL.prototype.cobind
+    NEL.prototype.ap = List.prototype.ap
+
+
+    /* Maybe Monad */
+
+    var Maybe = root.Maybe = {}
+
+    Maybe.fromNull = function (val) {
+        return val == null ? Maybe.None() : Maybe.Some(val)
+    };
+
+    Maybe.of = function (a) {
+        return Some(a)
+    }
+
+    var Just;
+    var Some = Just = Maybe.Just = Maybe.Some = root.Some = root.Just = function (val) {
+        return new Maybe.fn.init(true, val)
+    };
+
+    var Nothing;
+    var None = Nothing = Maybe.Nothing = Maybe.None = root.None = function () {
+        return new Maybe.fn.init(false, null)
+    };
+
+    Maybe.toList = function (maybe) {
+        return maybe.toList()
+    }
+
+    Maybe.fn = Maybe.prototype = {
+        init: function (isValue, val) {
+            this.isValue = isValue
+            if (val == null && isValue) {
+                throw "Illegal state exception"
+            }
+            this.val = val
+        },
+        isSome: function () {
+            return this.isValue
+        },
+        isNone: function () {
+            return !this.isSome()
+        },
+        bind: function (bindFn) {
+            return this.isValue ? bindFn(this.val) : this
+        },
+        some: function () {
+            if (this.isValue) {
+                return this.val
+            } else {
+                throw "Illegal state exception"
+            }
+        },
+        orSome: function (otherValue) {
+            return this.isValue ? this.val : otherValue
+        },
+        orElse: function (maybe) {
+            return this.isValue ? this : maybe
+        },
+        ap: function (maybeWithFunction) {
+            var value = this.val
+            return this.isValue ? maybeWithFunction.map(function (fn) {
+                return fn(value)
+            }) : this
+        },
+
+        toList: function () {
+            return this.map(List).orSome(Nil)
+        },
+        toEither: function (failVal) {
+            return this.isSome() ? Right(this.val) : Left(failVal)
+        },
+        toValidation: function (failVal) {
+            return this.isSome() ? Success(this.val) : Fail(failVal)
+        },
+        fold: function (defaultValue) {
+            var self = this
+            return function (fn) {
+                return self.isSome() ? fn(self.val) : defaultValue
+            }
+        },
+        cata: function (none, some) {
+            return this.isSome() ? some(this.val) : none()
+        },
+        filter: function(fn) {
+          var self = this
+          return self.flatMap(function(a) {
+            return fn(a) ? self : None()
+          })
+        }
+    };
+
+    // aliases
+    Maybe.prototype.orJust = Maybe.prototype.orSome
+    Maybe.prototype.just = Maybe.prototype.some
+    Maybe.prototype.isJust = Maybe.prototype.isSome
+    Maybe.prototype.isNothing = Maybe.prototype.isNone
+
+    Maybe.fn.init.prototype = Maybe.fn
+
+    var Validation = root.Validation = {};
+
+    var Success = Validation.Success = Validation.success = root.Success = function (val) {
+        return new Validation.fn.init(val, true)
+    }
+
+    var Fail = Validation.Fail = Validation.fail = root.Fail = function (error) {
+        return new Validation.fn.init(error, false)
+    }
+
+    Validation.of = function (v) {
+        return Success(v)
+    }
+
+    Validation.fn = Validation.prototype = {
+        init: function (val, success) {
+            this.val = val
+            this.isSuccessValue = success
+        },
+        success: function () {
+            if (this.isSuccess())
+                return this.val;
+            else
+                throw 'Illegal state. Cannot call success() on a Validation.fail'
+        },
+        isSuccess: function () {
+            return this.isSuccessValue
+        },
+        isFail: function () {
+            return !this.isSuccessValue
+        },
+        fail: function () {
+            if (this.isSuccess())
+                throw 'Illegal state. Cannot call fail() on a Validation.success'
+            else
+                return this.val
+        },
+        bind: function (fn) {
+            return this.isSuccess() ? fn(this.val) : this
+        },
+        ap: function (validationWithFn) {
+            var value = this.val
+            return this.isSuccess() ?
+                validationWithFn.map(function (fn) {
+                    return fn(value);
+                })
+                :
+                (validationWithFn.isFail() ?
+                    Validation.Fail(Semigroup.append(value, validationWithFn.fail()))
+                    : this)
+        },
+        acc: function () {
+            var x = function () {
+                return x
+            }
+            return this.isSuccessValue ? Validation.success(x) : this
+        },
+        cata: function (fail, success) {
+            return this.isSuccessValue ?
+                success(this.val)
+                : fail(this.val)
+        },
+        failMap: function (fn) {
+            return this.isFail() ? Fail(fn(this.val)) : this
+        },
+        bimap: function (fail, success) {
+            return this.isSuccessValue ? this.map(success) : this.failMap(fail)
+        },
+        toMaybe: function () {
+            return this.isSuccess() ? Some(this.val) : None()
+        },
+        toEither: function () {
+            return (this.isSuccess() ? Right : Left)(this.val)
+        }
+    };
+
+    Validation.fn.init.prototype = Validation.fn;
+
+
+    var Semigroup = root.Semigroup = {}
+
+    Semigroup.append = function (a, b) {
+        if (a instanceof Array) {
+            return a.concat(b)
+        }
+        if (typeof a === "string") {
+            return a + b
+        }
+        if (isFunction(a.concat)) {
+            return a.concat(b)
+        }
+        throw "Couldn't find a semigroup appender in the environment, please specify your own append function"
+    }
+
+    var monadT, monadTransformer, MonadTransformer;
+    var MonadT = monadT = monadTransformer = MonadTransformer = root.monadTransformer = root.MonadT = root.monadT = function (monad) {
+        return new MonadT.fn.init(monad)
+    }
+
+    MonadT.of = function (m) {
+        return MonadT(m)
+    }
+
+    MonadT.fn = MonadT.prototype = {
+        init: function (monad) {
+            this.monad = monad
+        },
+        map: function (fn) {
+            return monadT(this.monad.map(function (v) {
+                return v.map(fn)
+            }))
+        },
+        bind: function (fn) {
+            return monadT(this.monad.map(function (v) {
+                return v.flatMap(fn)
+            }))
+        },
+        ap: function (monadWithFn) {
+            return monadT(this.monad.flatMap(function (v) {
+                return monadWithFn.perform().map(function (v2) {
+                    return v.ap(v2)
+                })
+            }))
+        },
+        perform: function () {
+            return this.monad;
+        }
+    }
+
+    MonadT.fn.init.prototype = MonadT.fn;
+
+    var io;
+    var IO = io = root.IO = root.io = function (effectFn) {
+        return new IO.fn.init(effectFn)
+    }
+
+    IO.of = function (a) {
+        return IO(function() {
+          return a
+        })
+    }
+
+    IO.fn = IO.prototype = {
+        init: function (effectFn) {
+            if (!isFunction(effectFn))
+                throw "IO requires a function"
+            this.effectFn = effectFn;
+        },
+        map: function (fn) {
+            var self = this;
+            return IO(function () {
+                return fn(self.effectFn())
+            })
+        },
+        bind: function (fn) {
+            var self = this
+            return IO(function () {
+                return fn(self.effectFn()).run()
+            });
+        },
+        ap: function (ioWithFn) {
+            var self = this
+            return ioWithFn.map(function (fn) {
+                return fn(self.effectFn())
+            })
+        },
+        run: function () {
+            return this.effectFn()
+        }
+    }
+
+    IO.fn.init.prototype = IO.fn;
+
+    IO.prototype.perform = IO.prototype.performUnsafeIO = IO.prototype.run
+
+    /* Either Monad */
+
+    var Either = root.Either = {}
+
+    Either.of = function (a) {
+        return Right(a)
+    }
+
+    var Right = Either.Right = root.Right = function (val) {
+        return new Either.fn.init(val, true)
+    };
+    var Left = Either.Left = root.Left = function (val) {
+        return new Either.fn.init(val, false)
+    };
+
+    Either.fn = Either.prototype = {
+        init: function (val, isRightValue) {
+            this.isRightValue = isRightValue
+            this.value = val
+        },
+        bind: function (fn) {
+            return this.isRightValue ? fn(this.value) : this
+        },
+        ap: function (eitherWithFn) {
+            var self = this
+            return this.isRightValue ? eitherWithFn.map(function (fn) {
+                return fn(self.value)
+            }) : this
+        },
+        leftMap: function (fn) {
+            return this.isLeft() ? Left(fn(this.value)) : this
+        },
+        isRight: function () {
+            return this.isRightValue
+        },
+        isLeft: function () {
+            return !this.isRight()
+        },
+        right: function () {
+            if (this.isRightValue) {
+                return this.value
+            } else {
+                throw "Illegal state. Cannot call right() on a Either.left"
+            }
+        },
+        left: function () {
+            if (this.isRightValue) {
+                throw "Illegal state. Cannot call left() on a Either.right"
+            } else {
+                return this.value
+            }
+        },
+        cata: function (leftFn, rightFn) {
+            return this.isRightValue ? rightFn(this.value) : leftFn(this.value)
+        },
+        bimap: function (leftFn, rightFn) {
+            return this.isRightValue ? this.map(rightFn) : this.leftMap(leftFn)
+        },
+        toMaybe: function () {
+            return this.isRight() ? Some(this.value) : None()
+        },
+        toValidation: function () {
+            return this.isRight() ? Success(this.value) : Fail(this.value)
+        }
+    }
+
+    Either.fn.init.prototype = Either.fn;
+
+    var reader;
+    var Reader = reader = root.Reader = function (fn) {
+        return new Reader.fn.init(fn)
+    }
+
+    Reader.of = function (x) {
+      return Reader(function (_) {
+        return x
+      })
+    }
+
+    Reader.ask = function () {
+      return Reader(idFunction)
+    }
+
+    Reader.fn = Reader.prototype = {
+        init: function (fn) {
+            this.f = fn
+        },
+        run: function (config) {
+            return this.f(config)
+        },
+        bind: function (fn) {
+            var self = this
+            return Reader(function (config) {
+                return fn(self.run(config)).run(config)
+            })
+        },
+        ap: function (readerWithFn) {
+            var self = this
+            return readerWithFn.bind(function (fn) {
+                return Reader(function (config) {
+                    return fn(self.run(config))
+                })
+            })
+        },
+        map: function (fn) {
+            var self = this
+            return Reader(function (config) {
+                return fn(self.run(config))
+            })
+        },
+        local: function(fn) {
+            var self = this
+             return Reader(function(c) {
+                 return self.run(fn(c))
+            })
+        }
+    }
+
+    Reader.fn.init.prototype = Reader.fn;
+
+    var Free = root.Free = {}
+
+    var Suspend = Free.Suspend = root.Suspend = function (functor) {
+        return new Free.fn.init(functor, true)
+    }
+    var Return = Free.Return = root.Return = function (val) {
+        return new Free.fn.init(val, false)
+    }
+
+    Free.of = function (a) {
+        return Return(a)
+    }
+
+    Free.liftF = function (functor) {
+        return Suspend(functor.map(Return))
+    }
+
+    Free.fn = Free.prototype = {
+        init: function (val, isSuspend) {
+            this.isSuspend = isSuspend
+            if (isSuspend) {
+                this.functor = val
+            } else {
+                this.val = val
+            }
+        },
+        run: function () {
+            return this.go(function (f) {
+                return f()
+            })
+        },
+        bind: function (fn) {
+            return this.isSuspend ?
+                Suspend(
+                    this.functor.map(
+                        function (free) {
+                            return free.bind(fn)
+                        })) :
+                fn(this.val)
+        },
+        ap: function(ff) {
+          return this.bind(function(x) {
+            return ff.map(function(f) {
+              return f(x)
+            })
+          })
+        },
+
+        resume: function () {
+            return this.isSuspend ? Left(this.functor) : Right(this.val)
+        },
+
+        go1: function (f) {
+            function go2(t) {
+                return t.resume().cata(function (functor) {
+                    return go2(f(functor))
+                }, idFunction)
+            }
+
+            return go2(this)
+        },
+        go: function (f) {
+            var result = this.resume()
+            while (result.isLeft()) {
+                var next = f(result.left())
+                result = next.resume()
+            }
+
+            return result.right()
+        }
+
+    }
+
+    Free.fn.init.prototype = Free.fn;
+
+    var Identity = root.Identity = function (a) {
+        return new Identity.fn.init(a)
+    }
+
+    Identity.of = function (a) {
+        return new Identity(a)
+    }
+
+    Identity.fn = Identity.prototype = {
+        init: function (val) {
+            this.val = val
+        },
+        bind: function (fn) {
+            return fn(this.val);
+        },
+        get: function () {
+            return this.val
+        }
+    }
+
+    Identity.fn.init.prototype = Identity.fn;
+
+
+    Function.prototype.io = function () {
+        return IO(this)
+    }
+
+    Function.prototype.io1 = function () {
+        var f = this;
+        return function (x) {
+            return IO(
+                function () {
+                    return f(x)
+                }
+            )
+        }
+    }
+
+    Function.prototype.reader = function () {
+        var f = this
+        var wrapReader = function (fn, args) {
+            return function () {
+                var args1 = args.append(List.fromArray(Array.prototype.slice.call(arguments)));
+                var self = this
+                return args1.size() + 1 == fn.length ?
+                    Reader(function (c) {
+                        return fn.apply(self, (args1.append(List(c))).toArray())
+                    }) :
+                    wrapReader(fn, args1)
+            }
+        }
+        return wrapReader(f, Nil)
+    }
+
+    Function.prototype.compose = Function.prototype.o = function (g) {
+        var f = this
+        return function (x) {
+            return f(g(x))
+        }
+    }
+
+    Function.prototype.andThen = Function.prototype.map = function (g) {
+        var f = this
+        return function (x) {
+            return g(f(x))
+        }
+    }
+
+    function addAliases(type) {
+        type.prototype.flatMap = type.prototype.chain = type.prototype.bind
+        type.pure = type.unit = type.of
+        type.prototype.of = type.of
+        if (type.prototype.append != null) {
+            type.prototype.concat = type.prototype.append
+        }
+        type.prototype.point = type.prototype.pure = type.prototype.unit = type.prototype.of
+    }
+
+
+    // Wire up aliases
+    function addMonadOps(type) {
+        type.prototype.join = function () {
+            return this.flatMap(idFunction)
+        }
+
+        type.map2 = function (fn) {
+            return function (ma, mb) {
+                return ma.flatMap(function (a) {
+                    return mb.map(function (b) {
+                        return fn(a, b)
+                    })
+                })
+            }
+        }
+    }
+
+    function addFunctorOps(type) {
+        if (type.prototype.map == null) {
+            type.prototype.map = function (fn) {
+                return map.call(this, fn)
+            }
+        }
+    }
+
+    function addApplicativeOps(type) {
+        type.prototype.takeLeft = function (m) {
+            return apply2(this, m, function (a, b) {
+                return a
+            })
+        }
+
+        type.prototype.takeRight = function (m) {
+            return apply2(this, m, function (a, b) {
+                return b
+            })
+        }
+    }
+
+    function decorate(type) {
+        addAliases(type)
+        addMonadOps(type);
+        addFunctorOps(type);
+        addApplicativeOps(type);
+    }
+
+    decorate(MonadT)
+    decorate(Either)
+    decorate(Maybe)
+    decorate(IO)
+    decorate(NEL)
+    decorate(List)
+    decorate(Validation)
+    decorate(Reader)
+    decorate(Free)
+    decorate(Identity)
+
+    return root
+}));
+
+
 
 /***/ }),
-/* 40 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(1),
-    Error = _require.Error,
-    Ok = _require.Ok;
-
-/*~
- * stability: experimental
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a, b: (() => b :: throws a) => Result a b
- */
-
-
-var _try = function _try(f) {
-  try {
-    return Ok(f());
-  } catch (e) {
-    return Error(e);
-  }
-};
-
-module.exports = _try;
-
-/***/ }),
-/* 41 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(1),
-    Error = _require.Error,
-    Ok = _require.Ok;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- * 
- * type: |
- *   forall a:
- *     (a or None) => Result None a
- */
-
-
-var nullableToResult = function nullableToResult(a) {
-  return a != null ? Ok(a) : /*else*/Error(a);
-};
-
-module.exports = nullableToResult;
-
-/***/ }),
-/* 42 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -54339,27 +52289,27 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.collectErrors = undefined;
 
-var _lodash = __webpack_require__(4);
+var _lodash = __webpack_require__(0);
 
+var _utils = __webpack_require__(11);
+
+/**
+ * Created by htomaka on 11/11/17.
+ */
 var collectErrors = exports.collectErrors = function collectErrors(validationRules) {
-  return (0, _lodash.reduce)(validationRules, function (acc, fn, key) {
-    acc[key] = fn().mapError(function (error) {
-      return error;
-    }).merge();
+  return (0, _lodash.reduce)(validationRules, function (acc, validationFn, key) {
+    var validationResult = validationFn();
+    if ((0, _utils.isError)(validationResult)) {
+      validationResult.cata(function (error) {
+        acc[key] = error;
+      });
+    }
     return acc;
   }, {});
-}; /**
-    * Created by htomaka on 11/11/17.
-    */
+};
 
 /***/ }),
-/* 43 */
-/***/ (function(module, exports) {
-
-module.exports = "<form name=\"$ctrl.form\" ng-submit=\"$ctrl.validateForm($ctrl.formData)\">\n    <div ng-display-errors=\"{{$ctrl.formErrors}}\">\n        <label for=\"username\"> Username</label>\n        <input type=\"text\" id=\"username\" name=\"username\"\n               ng-model=\"$ctrl.formData.username\">\n    </div>\n    <div ng-display-errors=\"{{$ctrl.formErrors}}\">\n        <label for=\"password\"> Password</label>\n        <input type=\"text\" id=\"password\" name=\"password\"\n               ng-model=\"$ctrl.formData.password\">\n    </div>\n    <div>\n        <button type=\"submit\">Submit</button>\n    </div>\n</form>\n"
-
-/***/ }),
-/* 44 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -54368,14 +52318,33 @@ module.exports = "<form name=\"$ctrl.form\" ng-submit=\"$ctrl.validateForm($ctrl
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+/**
+ * Created by htomaka on 15/11/17.
+ */
+var isError = exports.isError = function isError(either) {
+  return either.isLeft();
+};
 
-var _maybe = __webpack_require__(45);
+/***/ }),
+/* 12 */
+/***/ (function(module, exports) {
 
-var _maybe2 = _interopRequireDefault(_maybe);
+module.exports = "<form name=\"$ctrl.form\" ng-submit=\"$ctrl.validateForm($ctrl.formData)\">\n    <div ng-display-errors=\"{{$ctrl.formErrors}}\">\n        <label for=\"username\"> Username</label>\n        <input type=\"text\" id=\"username\" name=\"username\"\n               ng-model=\"$ctrl.formData.username\">\n    </div>\n    <div ng-display-errors=\"{{$ctrl.formErrors}}\">\n        <label for=\"password\"> Password</label>\n        <input type=\"text\" id=\"password\" name=\"password\"\n               ng-model=\"$ctrl.formData.password\">\n    </div>\n    <div>\n        <button type=\"submit\">Submit</button>\n    </div>\n</form>\n"
 
-var _lodash = __webpack_require__(4);
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _monet = __webpack_require__(9);
+
+var _lodash = __webpack_require__(0);
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /**
                                                                                                                                                                                                      * Created by htomaka on 12/11/17.
@@ -54383,133 +52352,59 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 
 var errorsToMaybe = function errorsToMaybe(errorsStr) {
-  return errorsStr ? _maybe2.default.Just(errorsStr) : _maybe2.default.Nothing();
+    return errorsStr ? _monet.Maybe.Just(errorsStr) : _monet.Maybe.Nothing();
+};
+
+var findInvalidFieldInContainer = function findInvalidFieldInContainer(container, field) {
+    var invalidField = container.querySelector('[name=' + field + ']');
+    return !!invalidField ? _monet.Maybe.Just(invalidField) : _monet.Maybe.Nothing();
 };
 
 var foldErrors = function foldErrors(el, errorsMap) {
-  return (0, _lodash.reduce)(errorsMap, function (acc, errorMsg, field) {
-    // Find if invalid field exist in DOM
-    var invalidField = el[0].querySelector('[name=' + field + ']');
-    if (invalidField) {
-      // add errors message to list
-      acc = [].concat(_toConsumableArray(acc), [_maybe2.default.Just(errorMsg)]);
+    return (0, _lodash.reduce)(errorsMap, function (acc, errorMsg, field) {
+        findInvalidFieldInContainer(el, field).chain(function () {
+            // add errors message to list
+            acc = [].concat(_toConsumableArray(acc), [_monet.Maybe.Just(errorMsg)]);
+        });
+        return acc;
+    }, []);
+};
+
+var removeErrors = function removeErrors(targetEl) {
+    var errorsEl = targetEl.querySelector('.error');
+    if (errorsEl) {
+        targetEl.removeChild(errorsEl);
     }
-    return acc;
-  }, []);
 };
 
 var renderError = function renderError(targetEl, msg) {
-  var msgEl = document.createElement('p');
-  var msgContent = document.createTextNode('' + msg);
-  msgEl.style.color = 'Red';
-  msgEl.appendChild(msgContent);
-  targetEl.appendChild(msgEl);
+    var msgEl = document.createElement('p');
+    var msgContent = document.createTextNode('' + msg);
+    msgEl.classList.add('error');
+    msgEl.style.color = 'Red';
+    msgEl.appendChild(msgContent);
+    targetEl.appendChild(msgEl);
 };
 
 function ngDisplayErrors() {
-  return function (scope, el, attrs) {
-    attrs.$observe('ngDisplayErrors', function (errorsString) {
-      errorsToMaybe(scope.$eval(errorsString)).map(function (errorsMap) {
-        return foldErrors(el, errorsMap);
-      }).chain(function (errorsMsg) {
-        errorsMsg.forEach(function (errorMsg) {
-          errorMsg.chain(function (msg) {
-            return renderError(el[0], msg);
-          });
+    return function (scope, el, attrs) {
+        attrs.$observe('ngDisplayErrors', function (errorsString) {
+            errorsToMaybe(scope.$eval(errorsString)).map(function (errorsMap) {
+                return foldErrors(el[0], errorsMap);
+            }).chain(function (errorsMsg) {
+                // reset errors
+                removeErrors(el[0]);
+                // display errors
+                errorsMsg.forEach(function (errorMsg) {
+                    errorMsg.chain(function (msg) {
+                        return renderError(el[0], msg);
+                    });
+                });
+            });
         });
-      });
-    });
-  };
+    };
 }
 exports.default = ngDisplayErrors;
-
-/***/ }),
-/* 45 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _module$exports;
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-
-var Maybe = __webpack_require__(7);
-
-var _require = __webpack_require__(0),
-    typeSymbol = _require.typeSymbol;
-
-/*~
- * stability: stable
- * authors:
- *   - "@boris-marinov"
- *   - Quildreen Motta
- * 
- * name: module folktale/maybe
- */
-
-
-module.exports = (_module$exports = {
-  Just: Maybe.Just,
-  Nothing: Maybe.Nothing,
-  hasInstance: Maybe.hasInstance,
-  of: Maybe.of,
-  empty: Maybe.empty,
-  fromJSON: Maybe.fromJSON
-}, _defineProperty(_module$exports, typeSymbol, Maybe[typeSymbol]), _defineProperty(_module$exports, 'fantasy-land/of', Maybe['fantasy-land/of']), _defineProperty(_module$exports, 'fromNullable', function fromNullable(aNullable) {
-  return __webpack_require__(46)(aNullable);
-}), _defineProperty(_module$exports, 'fromResult', function fromResult(aResult) {
-  return __webpack_require__(18)(aResult);
-}), _defineProperty(_module$exports, 'fromValidation', function fromValidation(aValidation) {
-  return __webpack_require__(16)(aValidation);
-}), _module$exports);
-
-/***/ }),
-/* 46 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-//----------------------------------------------------------------------
-//
-// This source file is part of the Folktale project.
-//
-// Licensed under MIT. See LICENCE for full licence information.
-// See CONTRIBUTORS for the list of contributors to the project.
-//
-//----------------------------------------------------------------------
-
-var _require = __webpack_require__(7),
-    Nothing = _require.Nothing,
-    Just = _require.Just;
-
-/*~
- * stability: stable
- * authors:
- *   - Quildreen Motta
- * 
- * type: |
- *   forall a:
- *     (a or None) => Maybe a
- */
-
-
-var nullableToMaybe = function nullableToMaybe(a) {
-  return a != null ? Just(a) : /*else*/Nothing();
-};
-
-module.exports = nullableToMaybe;
 
 /***/ })
 /******/ ]);

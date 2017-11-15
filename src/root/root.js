@@ -10,7 +10,7 @@ class controller {
     constructor() {
       this.form = {};
       this.formErrors = null;
-      this.formData = null;
+      this.formData = {};
     }
 
     validateForm(formData) {
